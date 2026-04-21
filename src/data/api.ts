@@ -154,7 +154,7 @@ query objkt($id: String!) {
     tags {
       tag
     }
-    events(where: { _or: [{ implements: {_eq: "SALE"} }, { type: {_in: ["HEN_MINT", "TEIA_SWAP", "HEN_SWAP", "HEN_SWAP_V2", "VERSUM_SWAP", "FA2_TRANSFER", "OBJKT_ASK", "OBJKT_ASK_V2", "OBJKT_ASK_V3", "OBJKT_ASK_V3_PRE"]} }]}, order_by: [{level: desc}, {opid: desc}]) {
+    events(where: { _or: [{ implements: {_eq: "SALE"} }, { type: {_in: ["HEN_MINT", "TEIA_SWAP", "HEN_SWAP", "HEN_SWAP_V2", "VERSUM_SWAP", "FA2_TRANSFER", "OBJKT_ASK", "OBJKT_ASK_V2", "OBJKT_ASK_V3", "OBJKT_ASK_V3_PRE", "OBJKT_ASK_V3_2"]} }]}, order_by: [{level: desc}, {opid: desc}]) {
       timestamp
       implements
       ophash
@@ -204,6 +204,27 @@ export async function getUser(addressOrName: string, type = 'user_address') {
   )
 
   return data?.teia_users?.length ? data.teia_users[0] : null
+}
+
+export async function getTokenInformationOnCollect(swap_id: number) {
+  const { data } = await fetchGraphQL(
+    `query getTokenInformationOnCollect($swap_id: bigint!) {
+      listings(limit: 1, where: {swap_id: {_eq: $swap_id}}) {
+        token_id
+        token {
+          name
+          artist_profile {
+            name
+          }
+          artist_address
+        }
+      }
+    }`,
+    'getTokenInformationOnCollect',
+    {"swap_id": swap_id}
+  )
+
+  return data?.listings?.length ? data.listings[0] : null
 }
 
 export async function fetchCollabCreations(
@@ -274,7 +295,7 @@ interface TzktData {
  */
 export const GetUserMetadata = async (walletAddr: string) => {
   const tzktData: TzktData = await getTzktData(
-    `/v1/accounts/${walletAddr}/metadata`
+    `/v1/accounts/${walletAddr}`
   )
 
   return tzktData
@@ -298,6 +319,83 @@ export async function getTzktData(
   if (debug) console.log(`Executed TzKT query: ${url}`)
 
   return response?.data
+}
+
+/**
+ * Search tokens for embedding in blog posts.
+ * Auto-detects query type: token ID, tezos address, or text search.
+ */
+export async function searchTokensForEmbed(query: string) {
+  const trimmed = query.trim()
+  if (!trimmed) return { tokens: [], artists: [] }
+
+  // Teia URL lookup, extract token ID from teia URLs
+  const urlMatch = trimmed.match(/(?:teia\.art)\/objkt\/(\d+)/)
+  if (urlMatch) {
+    const token = await fetchObjktDetails(urlMatch[1])
+    return { tokens: token ? [token] : [], artists: [] }
+  }
+
+  // Token ID lookup
+  if (/^\d+$/.test(trimmed)) {
+    const token = await fetchObjktDetails(trimmed)
+    return { tokens: token ? [token] : [], artists: [] }
+  }
+
+  // Address lookup
+  if (/^(tz[123]|KT1)/.test(trimmed)) {
+    const { data } = await fetchGraphQL(
+      `${BaseTokenFieldsFragment}
+      query SearchByAddress($address: String!) {
+        tokens(
+          where: {
+            artist_address: { _eq: $address },
+            fa2_address: { _eq: "${HEN_CONTRACT_FA2}" },
+            editions: { _gt: "0" }
+          },
+          order_by: { minted_at: desc },
+          limit: 20
+        ) {
+          ...baseTokenFields
+        }
+      }`,
+      'SearchByAddress',
+      { address: trimmed }
+    )
+    return { tokens: data?.tokens || [], artists: [] }
+  }
+
+  // Text search: tokens by name + users by name
+  const { data } = await fetchGraphQL(
+    `${BaseTokenFieldsFragment}
+    query SearchTokensAndArtists($query: String!) {
+      tokens(
+        where: {
+          name: { _ilike: $query },
+          fa2_address: { _eq: "${HEN_CONTRACT_FA2}" },
+          editions: { _gt: "0" }
+        },
+        order_by: { minted_at: desc },
+        limit: 10
+      ) {
+        ...baseTokenFields
+      }
+      teia_users(
+        where: { name: { _ilike: $query } },
+        limit: 5
+      ) {
+        user_address
+        name
+      }
+    }`,
+    'SearchTokensAndArtists',
+    { query: `%${trimmed}%` }
+  )
+
+  return {
+    tokens: data?.tokens || [],
+    artists: data?.teia_users || [],
+  }
 }
 
 /**

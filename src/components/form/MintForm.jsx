@@ -17,7 +17,6 @@ import {
   generateTypedArtCoverImage,
 } from '@utils/mint'
 import { AUTO_GENERATE_COVER_MIMETYPES } from '@constants'
-import { Midi } from '@tonejs/midi'
 import { processMidiCover } from '@utils/midi'
 
 export default function MintForm() {
@@ -32,11 +31,12 @@ export default function MintForm() {
     isMonoType,
   } = useOutletContext()
   const navigate = useNavigate()
-  const { control } = useFormContext()
-  const { defaultValues } = useFormState({ control })
   const [needsCover, setNeedsCover] = useState(false)
   const [isTypedArt, setIsTypedArt] = useState(false)
   const [preview, setPreview] = useState(null)
+
+  // Get the current state from the mint store
+  const mintStoreState = useMintStore((state) => state)
 
   // Dynamically update conditional fields
   const fields = useMemo(() => {
@@ -102,8 +102,8 @@ export default function MintForm() {
       } else if (data.typedinput) {
         data = await processTypedInput(data)
       } else if (
-        data.artifact.mimeType == 'audio/midi' ||
-        data.artifact.mimeType == 'audio/mid'
+        data.artifact.mimeType === 'audio/midi' ||
+        data.artifact.mimeType === 'audio/mid'
       ) {
         // generate midi cover and set as data.object
         data = await processMidiCover(data)
@@ -136,7 +136,7 @@ export default function MintForm() {
         </div>
       )}
       <Form
-        defaultValues={defaultValues}
+        defaultValues={mintStoreState}
         onSubmit={onSubmit}
         onReset={useMintStore.getState().reset}
         fields={fields}

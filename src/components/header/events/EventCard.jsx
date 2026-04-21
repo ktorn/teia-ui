@@ -37,12 +37,12 @@ export const EventCard = ({ event }) => {
             )}
           </Button>
         ) : (
-          <>
+          <Button>
             {event.title}
             {event.icon && (
               <span className={styles.event_icon}>{event.icon}</span>
             )}
-          </>
+          </Button>
         )}
       </motion.h1>
       <motion.p variants={itemVariants} className={styles.event_tag_line}>
@@ -51,7 +51,13 @@ export const EventCard = ({ event }) => {
       <motion.div variants={itemVariants} className={styles.event_content}>
         <Markdown>{event.content}</Markdown>
         {event.link && (
-          <a target="_blank" rel="noreferrer" href={event.link}>
+          <a
+            target="_blank"
+            rel="noreferrer"
+            href={event.link}
+            className={styles.event_more_info}
+            tabIndex={0}
+          >
             {'More info >> '}
           </a>
         )}

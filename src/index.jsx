@@ -1,12 +1,18 @@
 import { RootErrorBoundary } from '@atoms/error/RootErrorBoundary'
 import { Tags } from '@pages/tags/index'
 import { About } from '@pages/about'
+import { Donate } from '@pages/donate'
 import {
   CollabContractsOverview,
   CollabDisplay,
   Collaborate,
   CreateCollaboration,
 } from '@pages/collaborate'
+import Text from '@pages/text'
+import Community from '@pages/text/Community'
+import OfficialPosts from '@pages/text/OfficialPosts'
+import YourPosts from '@pages/text/YourPosts'
+import NewPost from '@pages/text/NewPost'
 import { Settings } from '@pages/config/Settings'
 import { Subjkt } from '@pages/config/Subjkt'
 import { DAO, Claim, ProposalDisplay } from '@pages/dao'
@@ -16,7 +22,7 @@ import {
   SubmitDaoProposals,
 } from '@pages/dao/tabs'
 import { TeiaPolls, PollDisplay } from '@pages/polls'
-import { Polls, CreatePolls } from '@pages/polls/tabs'
+import { Polls, CreatePolls, Discourse } from '@pages/polls/tabs'
 import { FAQ } from '@pages/faq'
 import { Home } from '@pages/home'
 import FriendsFeed from '@pages/home/feeds/friends-feed'
@@ -57,6 +63,8 @@ import Display from '@pages/profile'
 import Collections from '@pages/profile/collections'
 import Creations from '@pages/profile/creations'
 import Collabs from '@pages/profile/collabs'
+import Curation from '@pages/profile/curation'
+import TextPosts from '@pages/profile/text-posts'
 
 import Sync from '@pages/sync'
 import { Terms } from '@pages/terms'
@@ -75,12 +83,25 @@ import { Preview } from '@components/preview/index'
 import MintForm from '@components/form/MintForm'
 import { ListsFeed } from '@pages/home/feeds/lists-feed'
 import { MidiFeed } from '@pages/home/feeds/mime-type-feed'
+import CopyrightForm from '@components/copyright/wizard/form/CopyrightForm'
+import CopyrightPage from '@pages/copyright'
+import { CopyrightPreview } from '@components/copyright/wizard/preview'
+import { CopyrightCreate } from '@components/copyright/wizard/create'
+import CopyrightDisplay from '@components/copyright/profile/CopyrightDisplay'
+import { CodeOfConduct } from '@pages/codeofconduct'
+import { CoreValues } from '@pages/corevalues'
+import { PrivacyPolicy } from '@pages/privacypolicy'
+import AdminCopyrightPage from '@pages/admincopyright'
+import CopyrightMarketplace from '@pages/copyrightmarketplace'
 
 const display_routes = (
   <>
     <Route index element={<Creations />} />
     <Route exact path="collection" element={<Collections />} />
+    <Route exact path="curation" element={<Curation />} />
     <Route exact path="collabs" element={<Collabs />} />
+    <Route exact path="text" element={<TextPosts />} />
+    <Route exact path="copyrights" element={<CopyrightDisplay />} />
   </>
 )
 
@@ -89,6 +110,7 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="*" errorElement={<RootErrorBoundary />} element={<App />}>
       <Route path="/*" index element={<Home />} />
+      <Route path="admincopyright" element={<AdminCopyrightPage />} />
       <Route path="feed/*" element={<Home />}>
         <Route path="sales" element={<RecentSalesFeed />} />
         <Route path="lists" element={<ListsFeed />} />
@@ -130,17 +152,32 @@ const router = createBrowserRouter(
         <Route index element={<CollabDisplay />} />
       </Route>
       <Route exact path="about" element={<About />} />
+      <Route path="donate/*" element={<Donate />} />
       <Route exact path="terms" element={<Terms />} />
       <Route exact path="faq" element={<FAQ />} />
-
+      <Route exact path="codeofconduct" element={<CodeOfConduct />} />
+      <Route exact path="corevalues" element={<CoreValues />} />
+      <Route exact path="privacypolicy" element={<PrivacyPolicy />} />
       <Route path="sync" element={<Sync />} />
       <Route exact path="mint/*" element={<Mint />}>
         <Route index element={<MintForm />} />
         <Route path="preview" element={<Preview />} />
       </Route>
+      <Route exact path="copyright/*" element={<CopyrightPage />}>
+        <Route index element={<CopyrightForm />} />
+        <Route path="preview" element={<CopyrightPreview />} />
+        <Route path="create" element={<CopyrightCreate />} />
+      </Route>
+      <Route path="copyrightmarketplace" element={<CopyrightMarketplace />} />
       <Route path="collaborate/*" element={<Collaborate />}>
         <Route index element={<CollabContractsOverview />} />
         <Route path="create" element={<CreateCollaboration />} />
+      </Route>
+      <Route path="text/*" element={<Text />}>
+        <Route index element={<Community />} />
+        <Route path="bulletin" element={<OfficialPosts />} />
+        <Route path="yourposts" element={<YourPosts />} />
+        <Route path="newpost" element={<NewPost />} />
       </Route>
       <Route path="objkt/:id/*" element={<ObjktDisplay />}>
         <Route index element={<Info />} />
@@ -164,6 +201,7 @@ const router = createBrowserRouter(
       <Route path="polls/*" element={<TeiaPolls />}>
         <Route index element={<Polls />} />
         <Route path="create" element={<CreatePolls />} />
+        <Route path="discourse" element={<Discourse />} />
         <Route path="*" element={<Polls />} />
       </Route>
       <Route path="poll/:id" element={<PollDisplay />} />

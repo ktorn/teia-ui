@@ -24,7 +24,7 @@
   height: 100vh;
 
   .content {
-    line-height: 3em;
+    line-height: 2.75em;
     display: flex;
     justify-content: center;
     flex-direction: row;
@@ -69,6 +69,9 @@
 
   @include respond-to('desktop') {
     padding-left: 30px;
+  }
+  a {
+    align-self: flex-start;
   }
   button {
     text-align: left;

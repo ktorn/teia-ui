@@ -1,14 +1,28 @@
 import useSWR from 'swr'
-import { bytes2Char } from '@taquito/utils'
-import { DAO_TOKEN_CONTRACT, DAO_TOKEN_DECIMALS } from '@constants'
-import { getTzktData, fetchObjktDetails } from '@data/api'
+import { gql, request } from 'graphql-request'
+import { bytesToString } from '@taquito/utils'
+import {
+  DAO_TOKEN_CONTRACT,
+  DAO_TOKEN_DECIMALS,
+  COPYRIGHT_CONTRACT,
+  DAO_TREASURY_CONTRACT,
+  HEN_CONTRACT_FA2,
+  TEIA_MULTISIG_BLOG_TAG,
+} from '@constants'
+import {
+  getTzktData,
+  fetchObjktDetails,
+  BaseTokenFieldsFragment,
+  fetchGraphQL,
+} from '@data/api'
+import laggy from '@utils/swr-laggy-middleware'
 
 function reorderBigmapData(data, subKey, decode = false) {
   const bigmapData = data ? {} : undefined
   data?.forEach(
     (item) =>
       (bigmapData[subKey ? item.key[subKey] : item.key] = decode
-        ? bytes2Char(item.value)
+        ? bytesToString(item.value)
         : item.value)
   )
 
@@ -255,4 +269,509 @@ export function useObjkt(id) {
   )
 
   return [data, mutate]
+}
+
+export const fetchTokenMetadataForCopyrightSearch = async (
+  contractAddress,
+  tokenId
+) => {
+  // Use TEIA GraphQL API via fetchObjktDetails
+  if (contractAddress === HEN_CONTRACT_FA2) {
+    try {
+      const tokenData = await fetchObjktDetails(tokenId.toString())
+
+      if (tokenData) {
+        let creators = []
+        if (
+          tokenData.artist_profile?.is_split &&
+          tokenData.artist_profile?.split_contract?.shareholders
+        ) {
+          // For split contracts, include all shareholders as creators
+          creators = tokenData.artist_profile.split_contract.shareholders.map(
+            (s) => s.shareholder_address
+          )
+        } else {
+          // Single creator
+          creators = [tokenData.artist_address]
+        }
+
+        return {
+          contract: {
+            address: tokenData.fa2_address,
+          },
+          tokenId: tokenData.token_id,
+          metadata: {
+            name: tokenData.name,
+            description: tokenData.description,
+            displayUri: tokenData.display_uri,
+            thumbnailUri: tokenData.thumbnail_uri,
+            artifactUri: tokenData.artifact_uri,
+            mimeType: tokenData.mime_type,
+            creators: creators,
+            decimals: '0',
+            royalties: tokenData.royalties,
+            editions: tokenData.editions,
+            mintedAt: tokenData.minted_at,
+            tags: tokenData.tags?.map((t) => t.tag) || [],
+            artist_profile: tokenData.artist_profile,
+            teia_meta: tokenData.teia_meta,
+            rights: tokenData.rights,
+            right_uri: tokenData.right_uri,
+          },
+        }
+      }
+    } catch (error) {
+      console.error(
+        'Error fetching from TEIA GraphQL, falling back to TzKT:',
+        error
+      )
+    }
+  }
+
+  // Default TzKT API for non-HEN tokens
+  const url = `${
+    import.meta.env.VITE_TZKT_API
+  }/v1/tokens?contract=${contractAddress}&tokenId=${tokenId}`
+  const response = await fetch(url)
+  if (!response.ok) throw new Error('Failed to fetch metadata')
+  const data = await response.json()
+  return data[0]
+}
+
+export async function fetchUserCopyrights(address) {
+  if (!address) return []
+
+  const url = `${
+    import.meta.env.VITE_TZKT_API
+  }/v1/contracts/${COPYRIGHT_CONTRACT}/bigmaps/copyrights/keys?key.address=${address}&limit=100&active=true`
+
+  try {
+    const res = await fetch(url)
+    if (!res.ok) {
+      throw new Error(`TzKT API error: ${res.statusText}`)
+    }
+
+    const data = await res.json()
+    return data
+  } catch (err) {
+    console.error('Failed to fetch user copyrights:', err)
+    return []
+  }
+}
+
+const clauseFilterMap = {
+  reproduce: 'value.clauses.reproduce',
+  broadcast: 'value.clauses.broadcast',
+  publicDisplay: 'value.clauses.publicDisplay',
+  createDerivativeWorks: 'value.clauses.createDerivativeWorks',
+  requireAttribution: 'value.clauses.requireAttribution',
+  rightsAreTransferable: 'value.clauses.rightsAreTransferable',
+  releasePublicDomain: 'value.clauses.releasePublicDomain',
+  expirationDate: 'value.clauses.expirationDateExists',
+}
+
+function applyCopyrightFilters(params, filters) {
+  for (const [key, value] of Object.entries(filters)) {
+    if (value === 'allowed' || value === 'denied') {
+      const param = clauseFilterMap[key]
+      if (param) {
+        params.set(param, value === 'allowed' ? 'true' : 'false')
+      }
+    }
+    if (
+      key === 'exclusiveRights' &&
+      (value === 'allowed' || value === 'denied')
+    ) {
+      params.set(
+        'value.clauses.exclusiveRights',
+        value === 'allowed' ? 'creator' : 'owner'
+      )
+    }
+  }
+}
+
+export async function fetchCopyrightsPaginated({
+  offset = 0,
+  limit = 20,
+  filters = {},
+} = {}) {
+  const params = new URLSearchParams()
+  params.set('limit', String(limit))
+  params.set('offset', String(offset))
+  params.set('sort.desc', 'id')
+  params.set('active', 'true')
+  applyCopyrightFilters(params, filters)
+
+  const url = `${
+    import.meta.env.VITE_TZKT_API
+  }/v1/contracts/${COPYRIGHT_CONTRACT}/bigmaps/copyrights/keys?${params.toString()}`
+
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`TzKT API error: ${res.statusText}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Failed to fetch paginated copyrights:', err)
+    return []
+  }
+}
+
+export async function fetchCopyrightsCount(filters = {}) {
+  const params = new URLSearchParams()
+  params.set('active', 'true')
+  applyCopyrightFilters(params, filters)
+
+  const url = `${
+    import.meta.env.VITE_TZKT_API
+  }/v1/contracts/${COPYRIGHT_CONTRACT}/bigmaps/copyrights/keys/count?${params.toString()}`
+
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`TzKT API error: ${res.statusText}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Failed to fetch copyrights count:', err)
+    return 0
+  }
+}
+
+export async function fetchCreatorAliases(addresses) {
+  if (!addresses || addresses.length === 0) return new Map()
+
+  const query = `
+    query GetAliases($addresses: [String!]!) {
+      teia_users(where: { user_address: { _in: $addresses } }) {
+        user_address
+        name
+      }
+    }
+  `
+
+  try {
+    const result = await fetchGraphQL(query, 'GetAliases', { addresses })
+    const map = new Map()
+    result?.data?.teia_users?.forEach((user) => {
+      if (user.name) {
+        map.set(user.user_address, user.name)
+      }
+    })
+    return map
+  } catch (err) {
+    console.error('Failed to fetch creator aliases:', err)
+    return new Map()
+  }
+}
+
+export async function fetchAllCopyrights() {
+  const url = `${
+    import.meta.env.VITE_TZKT_API
+  }/v1/contracts/${COPYRIGHT_CONTRACT}/bigmaps/copyrights/keys?limit=100&active=true`
+
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`TzKT API error: ${res.statusText}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Failed to fetch all copyrights:', err)
+    return []
+  }
+}
+
+export async function fetchProposals() {
+  const url = `${
+    import.meta.env.VITE_TZKT_API
+  }/v1/contracts/${COPYRIGHT_CONTRACT}/bigmaps/proposals/keys?limit=100&active=true`
+
+  try {
+    const res = await fetch(url)
+    if (!res.ok) {
+      throw new Error(`TzKT API error: ${res.statusText}`)
+    }
+
+    return await res.json()
+  } catch (err) {
+    console.error('Failed to fetch proposals:', err)
+    return []
+  }
+}
+
+export async function fetchAllVotes(address) {
+  const addressFilter = address ? `&key.address=${address}` : ''
+  const url = `${
+    import.meta.env.VITE_TZKT_API
+  }/v1/contracts/${COPYRIGHT_CONTRACT}/bigmaps/votes/keys?limit=500&active=true${addressFilter}`
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`TzKT API error: ${res.statusText}`)
+    return await res.json()
+  } catch (err) {
+    console.error('Failed to fetch votes:', err)
+    return []
+  }
+}
+
+export async function fetchExpirationTime() {
+  const url = `${
+    import.meta.env.VITE_TZKT_API
+  }/v1/contracts/${DAO_TREASURY_CONTRACT}/storage?path=expiration_time`
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`TzKT API error: ${res.statusText}`)
+    const data = await res.json()
+    return parseInt(data)
+  } catch (err) {
+    console.error('Failed to fetch expiration_time:', err)
+    return 0
+  }
+}
+
+export async function fetchAgreementText() {
+  const url = `${
+    import.meta.env.VITE_TZKT_API
+  }/v1/contracts/${COPYRIGHT_CONTRACT}/storage?path=agreement_text`
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`TzKT API error: ${res.statusText}`)
+    const data = await res.json()
+    return data
+  } catch (err) {
+    console.error('Failed to fetch expiration_time:', err)
+    return 0
+  }
+}
+
+export function useDaoTokenHolders(limit = 10) {
+  const { data, mutate, error } = useSWR(
+    [`/dao/token-holders/${limit}`, limit],
+    async () => {
+      const url = `${
+        import.meta.env.VITE_TZKT_API
+      }/v1/tokens/balances?token.contract.eq=${DAO_TOKEN_CONTRACT}&token.tokenId.eq=0&sort.desc=balance&limit=${limit}`
+
+      try {
+        const res = await fetch(url)
+        if (!res.ok) throw new Error(`TzKT API error: ${res.statusText}`)
+        const holders = await res.json()
+
+        return holders.map((holder) => ({
+          address: holder.account.address,
+          alias: holder.account.alias,
+          balance: parseInt(holder.balance) / DAO_TOKEN_DECIMALS,
+          transfersCount: holder.transfersCount,
+          firstTime: holder.firstTime,
+          lastTime: holder.lastTime,
+        }))
+      } catch (err) {
+        console.error('Failed to fetch token holders:', err)
+        throw err
+      }
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+    }
+  )
+
+  return { data, mutate, error, isLoading: !data && !error }
+}
+
+export function useFountainDonations(contractAddress, limit = 10000) {
+  const { data, mutate, error } = useSWR(
+    contractAddress
+      ? [`/contract-donations/${contractAddress}`, contractAddress, limit]
+      : null,
+    async () => {
+      const url = `${
+        import.meta.env.VITE_TZKT_API
+      }/v1/operations/transactions?target=${contractAddress}&select=sender,amount,timestamp&limit=${limit}&status=applied`
+
+      try {
+        const res = await fetch(url)
+        if (!res.ok) throw new Error(`TzKT API error: ${res.statusText}`)
+        const transactions = await res.json()
+        return transactions
+      } catch (err) {
+        console.error('Failed to fetch contract donations:', err)
+        throw err
+      }
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+    }
+  )
+
+  return { data, mutate, error, isLoading: !data && !error }
+}
+
+export function useTopDonors(excludeAddresses = []) {
+  const { data, mutate, error } = useSWR(
+    [`/top-donators`, excludeAddresses.join(',')],
+    async () => {
+      // Fetch all donors
+      const url = `${
+        import.meta.env.VITE_TEIA_DONATION_API
+      }/top-donators?limit=1000`
+
+      try {
+        const res = await fetch(url)
+        if (!res.ok)
+          throw new Error(`Top donators API error: ${res.statusText}`)
+        const result = await res.json()
+
+        // Filter out excluded addresses & KT1 addresses
+        const excludeSet = new Set(excludeAddresses)
+        return result.donators.filter((donor) => {
+          const address = donor.donator_address
+          if (address?.startsWith('KT1')) return false
+          if (excludeSet.has(address)) return false
+          return true
+        })
+      } catch (err) {
+        console.error('Failed to fetch top donators:', err)
+        throw err
+      }
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+    }
+  )
+
+  return { data, mutate, error, isLoading: !data && !error }
+}
+
+const TEXT_POSTS_QUERY = gql`
+  ${BaseTokenFieldsFragment}
+  query TextPosts($limit: Int!) {
+    tokens(
+      where: {
+        _or: [
+          { mime_type: { _eq: "text/plain" } }
+          { mime_type: { _eq: "text/markdown" } }
+        ]
+        editions: { _gt: 0 }
+        metadata_status: { _eq: "processed" }
+        fa2_address: { _eq: "${HEN_CONTRACT_FA2}" }
+      }
+      order_by: { minted_at: desc }
+      limit: $limit
+    ) {
+      ...baseTokenFields
+    }
+  }
+`
+
+export function useTextPosts(limit = 100) {
+  return useSWR(
+    ['text-community'],
+    () =>
+      request(import.meta.env.VITE_TEIA_GRAPHQL_API, TEXT_POSTS_QUERY, {
+        limit,
+      }),
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      use: [laggy],
+    }
+  )
+}
+
+const TEXT_POSTS_BY_ARTIST_QUERY = gql`
+  ${BaseTokenFieldsFragment}
+  query TextPostsByArtist($address: String!) {
+    tokens(
+      where: {
+        artist_address: { _eq: $address }
+        _or: [
+          { mime_type: { _eq: "text/plain" } }
+          { mime_type: { _eq: "text/markdown" } }
+        ]
+        editions: { _gt: 0 }
+        metadata_status: { _eq: "processed" }
+        fa2_address: { _eq: "${HEN_CONTRACT_FA2}" }
+      }
+      order_by: { minted_at: desc }
+    ) {
+      ...baseTokenFields
+      listings(where: { status: { _eq: "active" } }, order_by: { price: asc }) {
+        seller_address
+      }
+      holdings(where: { amount: { _gt: "0" } }) {
+        holder_address
+        amount
+      }
+    }
+  }
+`
+
+export function useTextPostsByArtist(address) {
+  return useSWR(
+    address ? ['text-posts-by-artist', address] : null,
+    () =>
+      request(
+        import.meta.env.VITE_TEIA_GRAPHQL_API,
+        TEXT_POSTS_BY_ARTIST_QUERY,
+        { address }
+      ),
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      use: [laggy],
+    }
+  )
+}
+
+const OFFICIAL_TEXT_POSTS_QUERY = gql`
+  ${BaseTokenFieldsFragment}
+  query OfficialTextPosts($addresses: [String!], $tag: String!, $limit: Int!) {
+    tokens(
+      where: {
+        artist_address: { _in: $addresses }
+        tags: { tag: { _eq: $tag } }
+        _or: [
+          { mime_type: { _eq: "text/plain" } }
+          { mime_type: { _eq: "text/markdown" } }
+        ]
+        editions: { _gt: 0 }
+        metadata_status: { _eq: "processed" }
+        fa2_address: { _eq: "${HEN_CONTRACT_FA2}" }
+      }
+      order_by: { minted_at: desc }
+      limit: $limit
+    ) {
+      ...baseTokenFields
+    }
+  }
+`
+
+export function useMultisigAddresses() {
+  const { data } = useSWR(
+    `/v1/contracts/${DAO_TREASURY_CONTRACT}/storage?path=users`,
+    getTzktData,
+    { revalidateIfStale: false, revalidateOnFocus: false }
+  )
+  return data || []
+}
+
+export function useOfficialTextPosts(limit = 100) {
+  const multisigAddresses = useMultisigAddresses()
+  return useSWR(
+    multisigAddresses.length > 0 ? ['text-official', multisigAddresses] : null,
+    () =>
+      request(
+        import.meta.env.VITE_TEIA_GRAPHQL_API,
+        OFFICIAL_TEXT_POSTS_QUERY,
+        {
+          addresses: multisigAddresses,
+          tag: TEIA_MULTISIG_BLOG_TAG,
+          limit,
+        }
+      ),
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      use: [laggy],
+    }
+  )
 }

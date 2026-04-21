@@ -10,6 +10,7 @@ export const PATH = {
   FAQ: '/faq',
   CLAIM: '/claim',
   DAO: '/dao',
+  COPYRIGHT: '/copyright',
   PROPOSAL: '/proposal',
   POLLS: '/polls',
   POLL: '/poll',
@@ -35,7 +36,7 @@ export const MIMETYPE: { [key: string]: string } = {
   MID: 'audio/mid',
   MP3: 'audio/mpeg',
   MP4: 'video/mp4',
-  OGA: 'audio/ogg',
+  OGG: 'audio/ogg',
   OGV: 'video/ogg',
   PDF: 'application/pdf',
   PNG: 'image/png',
@@ -52,6 +53,14 @@ export const MIMETYPE: { [key: string]: string } = {
   TXT: 'text/plain',
 }
 
+export const AUDIO_MIME_TYPES = [
+  'audio/mpeg',
+  'audio/wav',
+  'audio/flac',
+  'audio/x-flac',
+  'audio/ogg',
+]
+
 export const ALLOWED_MIMETYPES = Object.keys(MIMETYPE)
   .map((k) => MIMETYPE[k])
   // disabling GLTF from new updates,
@@ -65,7 +74,6 @@ export const ALLOWED_FILETYPES_LABEL = Object.entries(MIMETYPE)
       ![
         'ZIP1',
         'ZIP2',
-        'OGA',
         'OGV',
         'BMP',
         'TIFF',
@@ -102,7 +110,7 @@ export const FEED_LIST = [
 
 export type FeedType = (typeof FEED_LIST)[number]
 
-export const DEFAULT_START_FEED: FeedType = 'Recent Sales'
+export const DEFAULT_START_FEED: FeedType = 'New OBJKTs'
 
 //- Mint stuff
 
@@ -110,7 +118,6 @@ export const ALLOWED_COVER_MIMETYPES = [
   MIMETYPE.JPEG,
   MIMETYPE.PNG,
   MIMETYPE.GIF,
-  MIMETYPE.MP4,
 ]
 
 export const AUTO_GENERATE_COVER_MIMETYPES = [
@@ -119,7 +126,7 @@ export const AUTO_GENERATE_COVER_MIMETYPES = [
   'audio/mid'
 ]
 
-export const ALLOWED_COVER_FILETYPES_LABEL = 'jpeg, png, gif, mp4'
+export const ALLOWED_COVER_FILETYPES_LABEL = 'jpeg, png, gif'
 export const MAX_EDITIONS = 10000 // Limited by contract
 export const MIN_ROYALTIES = 10
 export const MAX_ROYALTIES = 25
@@ -155,12 +162,34 @@ export const UKRAINE_FUNDING_CONTRACT = 'KT1DWnLiUkNtAQDErXxudFEH63JC6mqg3HEx'
 export const PAKISTAN_FUNDING_CONTRACT = 'KT1Jpf2TAcZS7QfBraQMBeCxjFhH6kAdDL4z'
 export const IRAN_FUNDING_CONTRACT = 'KT1KYfj97fpdomqyKsZSBdSVvh9afh93b4Ge'
 export const QUAKE_FUNDING_CONTRACT = 'KT1X1jyohFrZyDYWvCPXw9KvWxk2VDwxyg2g'
+export const COPYRIGHT_CONTRACT = 'KT1XAiMoaddkmLUhMYMrc3ghm9uBdLgVbiFK'
 export const MOROCCO_QUAKE_FUNDING_CONTRACT =
   'KT1RwXEP8Sj1UQDHPG4oEjRohBdzG2R7FCpA'
 
 export const POLLS_CONTRACT = 'KT1SUExZfkmxf2fafrVgYjZGEKDete2siWoU'
 export const DAO_GOVERNANCE_CONTRACT = 'KT1GHX73W5BcjbYRSZSrUJcnZE3Uw92VYF66'
+export const DAO_TREASURY_CONTRACT = 'KT1J9FYz29RBQi1oGLw8uXyACrzXzV1dHuvb'
+export const TEIA_FOUNTAIN_CONTRACT = 'KT1EsvmkijLKPQmcJMbjDeKRXdwky1LWvwpG'
 export const DAO_TOKEN_CONTRACT = 'KT1QrtA753MSv8VGxkDrKKyJniG5JtuHHbtV'
+
+// Specific tz addresses to exclude from donation lists
+export const DONATION_EXCLUDED_ADDRESSES = [
+  'tz1cyUSeLA9Zpf2yGncQFFFNpMBgkrvgz7KQ', // Zir0h's bakery payouts
+  'tz1gnuBF9TbBcgHPV2mUE96tBrW7PxqRmx1h', // Baking Benjamins Payouts
+]
+
+// Donations that were sent via a middleman and should be reassigned to the actual donor.
+// Each entry moves `amount` tez and 1 donation count from `from` to `to`.
+export const DONATION_REASSIGNMENTS = [
+  {
+    // Tezos Foundation donation sent via Ryan Tanaka
+    // tx: ooKskSzgUPDq32uo757BuEGzhNF6Ks8nSRGFst8iQgtHi2z2hPz
+    from: 'tz1ZVzMVj6EjRoDNFMCguG7nGdqmD7aau9kS',
+    to: 'tz1Sb4KVyoe4zVpwdFH5R1U822hUWqGEMDWE',
+    toAlias: 'Tezos Foundation',
+    amount: 25481.22,
+  },
+]
 export const DAO_TOKEN_CLAIM_CONTRACT = 'KT1NrfV4e2qWqFrnrKyPTJth5wq2KP9VyBei'
 export const DISTRIBUTION_MAPPING_IPFS_PATH =
   'QmbRmck8A5sBYQC7WEuK8dApnGQGXBhyPEgQpLm8ftfAtL'
@@ -217,6 +246,8 @@ export const SWAP_TYPE_HEN = 'HEN'
 export const MAIN_MARKETPLACE_CONTRACT = MARKETPLACE_CONTRACT_TEIA // the one that is used for swapping
 export const MAIN_MARKETPLACE_CONTRACT_SWAP_TYPE = SWAP_TYPE_TEIA
 
+export const TEIA_MULTISIG_BLOG_TAG = 'teiamultisigblog'
+
 export const BURN_ADDRESS = 'tz1burnburnburnburnburnburnburjAYjjX'
 
 export const COVER_COMPRESSOR_OPTIONS = {
@@ -239,7 +270,6 @@ export const LICENSE_TYPES: { [key: string]: string } = {
   'cc-by-nc-4.0': 'CC BY-NC 4.0 (Attribution-NonCommercial)',
   'cc-by-nc-sa-4.0': 'CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike)',
   'cc-by-nc-nd-4.0': 'CC BY-NC-ND 4.0 (Attribution-NonCommercial-NoDerivs)',
-  custom: 'Custom License',
 }
 
 export const LICENSE_TYPES_OPTIONS = Object.keys(LICENSE_TYPES).map((k) => ({

@@ -26,6 +26,8 @@ export default function PollDisplay() {
     )
   }
 
+  // We are replaying our discourse system.
+
   return (
     <Page title={`Teia poll #${id}`}>
       <div className={styles.container}>

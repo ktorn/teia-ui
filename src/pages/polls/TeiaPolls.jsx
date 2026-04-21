@@ -15,6 +15,10 @@ const TABS = [
     title: 'Create',
     to: 'create',
   },
+  {
+    title: 'Discourse',
+    to: 'discourse',
+  },
 ]
 
 export default function TeiaPolls() {
@@ -23,9 +27,9 @@ export default function TeiaPolls() {
   const [polls] = usePolls(pollsStorage)
 
   return (
-    <Page title="Teia polls">
+    <Page title="Teia Polls">
       <div className={styles.container}>
-        <h1 className={styles.headline}>Teia community polls</h1>
+        <h1 className={styles.headline}>Teia Community Polls</h1>
 
         {!polls ? (
           <LoadingPollsMessage />

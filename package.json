@@ -4,10 +4,11 @@
   "private": true,
   "dependencies": {
     "@magenta/music": "^1.23.1",
-    "@taquito/beacon-wallet": "^17.4.0",
-    "@taquito/michelson-encoder": "^17.4.0",
-    "@taquito/taquito": "^17.4.0",
+    "@taquito/beacon-wallet": "^24.1.0",
+    "@taquito/michelson-encoder": "^24.1.0",
+    "@taquito/taquito": "^24.1.0",
     "@tonejs/midi": "^2.0.28",
+    "@uiw/react-md-editor": "^4.0.11",
     "axios": "^0.27.2",
     "base-x": "^4.0.0",
     "bs58check": "^2.1.2",
@@ -24,6 +25,7 @@
     "markdown-to-jsx": "^7.1.9",
     "mime-types": "^2.1.35",
     "react": "^18.2.0",
+    "react-audio-visualize": "^1.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.43.1",
     "react-infinite-scroller": "^1.2.6",
@@ -72,7 +74,7 @@
     ]
   },
   "devDependencies": {
-    "@airgap/beacon-types": "^3.3.3",
+    "@airgap/beacon-types": "^4.8.0",
     "@babel/preset-react": "^7.18.6",
     "@google/model-viewer": "^3.0.1",
     "@hookform/devtools": "^4.3.0",

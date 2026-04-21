@@ -7,7 +7,7 @@ export const copyrightModalText = {
             <li><strong>Geographical Coverage:</strong> The rights are set globally, allowing for usage across all regions without any restrictions.</li>
             <li><strong>Duration of Rights:</strong> Rights are granted in perpetuity, meaning there is no expiration on the privileges and permissions granted to Owners after purchase.</li>
             <li><strong>Frequency of Rights:</strong> Rights are unlimited, not restricted by the number of broadcasts or platforms.</li>
-            <li><strong>Exclusivity:</strong> Exclusive rights Agreements (priviledges granted exclusive to one individual or entity and no one else), are possible using the number of Editions owned as a mechanism to facilitate these types of arrangements. (By default, all rights bestowed upon by the Creator are non-exclusive.)</li>
+            <li><strong>Exclusivity:</strong> Exclusive rights Agreements (privileges granted exclusive to one individual or entity and no one else), are possible using the number of Editions owned as a mechanism to facilitate these types of arrangements. (By default, all rights bestowed upon by the Creator are non-exclusive.)</li>
             <li><strong>Transferability:</strong> Rights are transferable because they are defined by the condition of ownership, allowing rights and associated privileges to be passed to others, unless stated otherwise.</li>
             <li><strong>Royalties:</strong> Royalties upon secondary sales still apply during transfers of ownership, which allows for Creators to earn "passive income", similar to deals that occur in traditional arts/entertainment industries.</li>
         </ul>
@@ -61,7 +61,7 @@ export const copyrightModalText = {
     releasePublicDomain: `
         <p>This clause allows the work to be released to the public domain, effectively removing all copyright restrictions associated with it.</p>
         <p>By releasing the work to the public domain, the creator permits anyone to use, modify, and distribute the work without needing to seek permission or pay royalties. This can be a strategic decision for creators who wish to maximize the work's exposure and accessibility.</p>
-        <p>Public domain release is often irrevocable, meaning once a work is released to the public domain, the creator cannot reclaim the rights. Therefore, it's crucial for Creators to carefully consider the implications before making such a decision, especially since it can be easily referenced on the blockchain itself. ("Announcements" made on social media or other privately-owned platforms often do not constitute</p>
+        <p>Public domain release is often irrevocable, meaning once a work is released to the public domain, the creator cannot reclaim the rights. Therefore, it's crucial for Creators to carefully consider the implications before making such a decision, especially since it can be easily referenced on the blockchain itself. ("Announcements" made on social media or other privately-owned platforms may or may not be admissible as a declaration so it may be risky to assume so.</p>
         <p>This option can be particularly beneficial for educational, cultural, or philanthropic purposes, contributing to the broader public good by freely sharing creative works.</p>
         `,
     requireAttribution: `
@@ -75,13 +75,45 @@ export const copyrightModalText = {
         <p>If rights are *not* transferable, the original Owner (usually the Creator) retains exclusive control over the use of the Work, and any attempt to transfer these rights without explicit approval from the Creator is void. This setup ensures that the Creator can maintain a closer relationship with the usage of their Work, limiting the potential for unauthorized uses or dilution of the Work’s value in contexts they did not consent to.</p>
         <p>In either case, Creators and Owners should clearly understand the terms of transferability and its implications since it potentially has long-term ramifications, especially when there is no expiration date attached to each clause.</p>
         `,
+    expirationDateExists: `
+        <p>This is the date where all rights given to Owner(s) upon the ownership of each edition/license expires, effectively returning the privledges and rights granted through the Work back to the Creator.</p>
+        <p>In professional contexts, expiration dates are typically set on a case-to-case basis (when an artist signs a "deal" with a label or company these details come into play), but if the Creator wants to create a blanket policy for their rights to be effective only during a limited time period, this option can be used to set a standard for all editions that apply to all Owners at once.</p>
+    `,
     expirationDate: `
         <p>This is the date where all rights given to Owner(s) upon the ownership of each edition/license expires, effectively returning the privledges and rights granted through the Work back to the Creator.</p>
         <p>In professional contexts, expiration dates are typically set on a case-to-case basis (when an artist signs a "deal" with a label or company these details come into play), but if the Creator wants to create a blanket policy for their rights to be effective only during a limited time period, this option can be used to set a standard for all editions that apply to all Owners at once.</p>
     `,
     customUri: `
-        <p>This feature allows creators to set a custom URI/URL for additional resources or information related to the NFT.</p>
-        <p>The custom URI can link to a variety of content, such as detailed metadata, licensing information, or the creator's personal website.</p>
-        <p>Note that the reference to the URI itself may be permanent (a link to someone's website, for example), but the destination itself may be editable, so unless modularity is what is needed, treat HTTP-based Custom URIs. (Destination links could be edited, or disappear.)</p>
-        <p>Custom URIs can be made fully decentralized by using IPFS CIDs (hashes) or other decentralized storage systems, for full immutability.</p>`
+        <p>The Custom URI feature serves two important functions for creators:</p>
+        
+        <p><strong>1. External Reference:</strong><br>
+        - Link to additional terms, restrictions, or declarations for the Work
+        - Provide supplementary documentation or metadata
+        - Reference creator's canonical information or portfolio</p>
+        
+        <p><strong>2. Retroactive Application:</strong><br>
+        - Point to a previous work by the same creator
+        - Apply current license terms to the referenced work
+        - Must be verifiable through wallet address ownership</p>
+        
+        <p><strong>Important Considerations:</strong></p>
+        <ul>
+        <li>For standard web links (http://, https://):
+          <ul>
+            <li>- The URI reference is permanent, but destination content may change</li>
+            <li>- Consider carefully if changeable content aligns with your intentions</li>
+            <li>- Best for dynamic information that may need updates</li>
+          </ul>
+        </li>
+        <li>For decentralized storage (ipfs://, etc.):
+          <ul>
+            <li>- Content is immutable and permanently stored</li>
+            <li>- Ideal for fixed terms or historical references</li>
+            <li>- Recommended for legal documents and permanent declarations</li>
+          </ul>
+        </li>
+        </ul>
+        
+        <p><strong>Verification Requirements:</strong><br>
+        When using this feature for retroactive application, creators must be able to prove ownership of both the current and referenced works through their wallet addresses. This typically requires maintaining access to both wallet addresses and being able to sign transactions or messages that verify ownership.</p>`
 };

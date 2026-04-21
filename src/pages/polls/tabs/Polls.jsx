@@ -48,8 +48,40 @@ export default function Polls() {
 
   return (
     <section className={styles.section}>
-      <h1 className={styles.section_title}>Teia polls</h1>
-
+      <h1 className={styles.section_title}>Teia Polls</h1>
+      <p>
+        TEIA's polling system is a community tool that any TEIA member can use
+        for any purpose - it is often used for feature requests, testing
+        interest or getting feedback for ideas (artistic or technical),
+        measuring community sentiment around certain issues, or just for fun.
+      </p>
+      <p>
+        To start or participate in a poll, the wallet sync'd must have a
+        non-zero amount of TEIA tokens, which is a on the Tezos (XTZ) chain. If
+        you're interested in acquiring $TEIA, you can read the guide{' '}
+        <a href="/dao">here.</a>
+      </p>
+      <p>
+        Use Teia DAO tokens to vote, only one vote per person will be counted.
+      </p>
+      <p>
+        The wallet will only be eligible to vote if it had $TEIA at the time of
+        poll creation.
+      </p>
+      <p>
+        We are replacing the discussion forum with our own system. More info
+        soon.
+      </p>
+      <p>
+        <a
+          href="https://quipuswap.com/swap/tez-KT1QrtA753MSv8VGxkDrKKyJniG5JtuHHbtV_0"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Convert XTZ to TEIA on Quipuswap (Decentralized Exchange)
+        </a>
+      </p>
+      <Line />
       <Select
         alt="poll group selection"
         value={{
